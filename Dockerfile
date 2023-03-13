@@ -17,11 +17,7 @@ RUN apt update -qq -y && \
     samtools \
     bcftools \
     freebayes \
-    flex \
-    bison \
-    libgmp3-dev \
-    cmake \
-    libgtest-dev \
+    unzip \
     && apt clean -y
 
 #Install smalt
@@ -44,22 +40,16 @@ RUN git clone https://github.com/bwa-mem2/bwa-mem2 \
 ENV PATH="$PATH:/opt/bwa-mem2/"
 
 #Install RAxML-NG
-RUN wget https://github.com/amkozlov/raxml-ng/archive/refs/tags/1.1.0.tar.gz \
-        && tar -xvf 1.1.0.tar.gz \
-        && cd raxml-ng-1.1.0 \
-        && mkdir build \
-        && cd build \
-        && cmake .. \
-        && make \
-        && cd ~
+RUN wget https://github.com/amkozlov/raxml-ng/releases/download/1.1.0/raxml-ng_v1.1.0_linux_x86_64.zip \
+        && unzip raxml-ng_v1.1.0_linux_x86_64.zip
 # Put binary on PATH
 ENV PATH=/opt/raxml-ng:${PATH}
 
 #Install java-19
 RUN wget https://download.oracle.com/java/19/latest/jdk-19_macos-x64_bin.tar.gz \
-        && tar -xvf ~/Downloads/openjdk-16.0.1_linux-x64_bin.tar.gz -C /opt \
-        && update-alternatives --install /usr/bin/java java /opt/jdk-16.0.1/bin/java 1000 \
-        && update-alternatives --install /usr/bin/javac javac /opt/jdk-16.0.1/bin/javac 1000 \
+        && tar -xvf jdk-19_macos-x64_bin.tar.gz -C /opt \
+        && update-alternatives --install /usr/bin/java java /opt/jdk-19.0.2.jdk/Contents/Home/bin/java 1000 \
+        && update-alternatives --install /usr/bin/javac javac /opt/jdk-19.0.2.jdk/Contents/Home/bin/javac 1000 \
         && update-alternatives --config java \
         && update-alternatives --config javac
 
@@ -76,15 +66,18 @@ RUN wget https://download.oracle.com/java/19/latest/jdk-19_macos-x64_bin.tar.gz 
 #Install Bowtie2
 RUN wget https://github.com/BenLangmead/bowtie2/archive/refs/tags/v2.5.1.tar.gz \
     && tar -xvf v2.5.1.tar.gz \
-    && cd bowtie2-v2.5.1 \
+    && cd bowtie2-2.5.1 \
     && make \
     && make static-libs \
     && make STATIC_BUILD=1
-ENV PATH=/opt/bowtie2-v2.5.1
+ENV PATH=/opt/bowtie2-v2.5.1:${PATH}
 
 # Install multimapper
 RUN mkdir -p $MULTIMAPPER_BUILD_DIR
 COPY . $MULTIMAPPER_BUILD_DIR
 RUN cd $MULTIMAPPER_BUILD_DIR \
-    && python3 setup.py test \
-    && python3 setup.py install
+    && apt install -y libbz2-dev liblzma-dev \
+    && pip3 install biopython \
+    matplotlib \
+    numpy \
+    pysam \

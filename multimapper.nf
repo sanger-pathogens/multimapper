@@ -30,26 +30,15 @@ def validate_parameters() {
 def build_tool_options(tool_box) {
     tools = tool_box.split(', ')
     tool_name = tools[0]
-    tools = tools[1:]
-
-    tools.each{
-    tool_call = '${tool_name}{it}'
-
-    }
-    def param.smlta="multimapper"
-    def toolcall = "params.smlta"
-
 
     def map = [:]
-    list.each{
-        it = it.replace("\$\$", "")
-        map.putAt(it, it)
+    tools.each{
+    tool_call = 'params.${tool_name}{it}'
+
     }
 
-    queryText = queryText.replaceAll(/\$\$(.*?)\$\$/) { k -> map[k[1]] ?: k[0] }
-
-    System.out.println(map)
-    System.out.println(queryText)
+    cammand_modifiers = tools { k -> map[k[1]] ?: k[0] }
+    return command_modifiers
 }
 
 process QC {
@@ -92,27 +81,7 @@ process SMALT_MAPPING {
    """
    smalt map $index $read1 $read2 > ${id}.sam
    """
-   //   -a $params.smlta \
-   //   -c $params.smltc \
-   //   -d $params.smltd \
-   //   -f $params.smltf \
-   //   -x $params.smltx \
-   //   -F $params.smltF \
-   //   -q $params.smltg \
-   //   -i $params.smlti \
-   //   -j $params.smltj \
-   //   -l $params.smltl \
-   //   -m $params.smltm \
-   //   -n $params.smltn \
-   //   -o $params.smlto \
-   //   -p $params.smltp \
-   //   -q $params.smltq \
-   //   -r $params.smltr \
-   //   -S $params.smltS \
-   //   -T $params.smltT \
-   //   -w $params.smltw
-   //   """
-      }
+}
 
 process BWA_INDEXING {
     input:
@@ -258,14 +227,13 @@ workflow SNP_VARIANTS {
     ref
 
     main:
-    if (params.snp == 'simon') {
+    if (params.snp == 'sh16') {
     SH_SNP(ref)
     SH_TIDY(ref, SH_SNP.out)
     vcfs = SH_SNP.out
     }
     if (params.snp == 'freebayes') {
-    FREEBAYES_SETUP()
-    FREEBAYES(sams, FREEBAYES_SETUP.out)
+    FREEBAYES(sams, ref)
     vcfs = FREEBAYES.out
     }
 

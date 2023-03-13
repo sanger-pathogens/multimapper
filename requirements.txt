@@ -1,8 +1,4 @@
-backports.functools-lru-cache==1.6.1
-biopython==1.68
-cycler==0.10.0
-fisher==0.1.4
-matplotlib==2.2.5
-numpy==1.12.1
-pysam==0.12.0.1
-subprocess32==3.5.4
+biopython
+matplotlib
+numpy
+pysam
