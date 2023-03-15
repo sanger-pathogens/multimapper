@@ -1,4 +1,3 @@
-# Multimapper
 
 [![License: GPL v3](https://img.shields.io/badge/license-GPL%20v3-brightgreen.svg)](https://github.com/sanger-pathogens/bact-gen-scripts/blob/master/LICENSE)   
 
