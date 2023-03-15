@@ -1,11 +1,13 @@
-FROM gitlab-registry.internal.sanger.ac.uk/sanger-pathogens/docker-images/pathogens-base:0.2
+FROM ubuntu:20.04
 WORKDIR /opt
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG MULTIMAPPER_BUILD_DIR=multimapper
+LABEL maintainer=path-help@sanger.ac.uk
 
 RUN apt update -qq -y && \
     apt install -y \
+    locales \
     python3 \
     python3-setuptools \
     python3-pip \
