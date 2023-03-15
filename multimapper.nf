@@ -28,16 +28,20 @@ def validate_parameters() {
 }
 
 def build_tool_options(tool_box) {
-    tools = tool_box.split(', ')
+    println(tool_box);
+    String[] tools;
+    tools = tool_box.split(', ');
+    println(tools);
     tool_name = tools[0]
+    tool_set = tools[1..-1]
 
     def map = [:]
-    tools.each{
-    tool_call = 'params.${tool_name}{it}'
-
-    }
-
-    cammand_modifiers = tools { k -> map[k[1]] ?: k[0] }
+    for( String tool : tool_set ) {
+    println(tool);
+    tool_call = 'params.${tool_name}{it}';
+    println(tool_call)
+}
+    command_modifiers = tools { k -> map[k[1]] ?: k[0] }
     return command_modifiers
 }
 
@@ -78,6 +82,7 @@ process SMALT_MAPPING {
     path('*.bam')
 
   script:
+  options = build_tool_options(params.smalt)
    """
    smalt map $index $read1 $read2 > ${id}.sam
    """
@@ -286,7 +291,7 @@ workflow {
 //     VCF_SORT(MAPPING.out.vcfs, reference, QC.out)
 
     SNP_VARIANTS(MAPPING.out.sams, reference)
-//
+
 //     TREEBUILD(VCF_SORT.out.collect(), reference)
 //     COLLECT_SNP_DATA(VCF_SORT.out.collect())
 }
