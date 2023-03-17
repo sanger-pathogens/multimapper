@@ -28,21 +28,23 @@ def validate_parameters() {
 }
 
 def build_tool_options(tool_box) {
-    println(tool_box);
-    String[] tools;
-    tools = tool_box.split(', ');
-    println(tools);
-    tool_name = tools[0]
-    tool_set = tools[1..-1]
+    // accepts parameter list of command line alterations for the tool used
+    // initiate parameter list that are in use
+    def tool_belt = []
 
-    def map = [:]
-    for( String tool : tool_set ) {
-    println(tool);
-    tool_call = 'params.${tool_name}{it}';
-    println(tool_call)
+    for( tool : tool_box ) {
+        tool_setting = tool.split(' ');
+        // tools are set up with '-flag input', split by gap and take second item
+        tool_status = tool_setting[1]
+
+        // tools are marked 'unused' if they are not in use by default, take only those in use
+        if( tool_status != 'unused' ) {
+            tool_belt.add(tool)
+    }
 }
-    command_modifiers = tools { k -> map[k[1]] ?: k[0] }
-    return command_modifiers
+    // return a string of all used flags in the form '-flag one -flag2 two'
+    equipped_tools = tool_belt.join(' ')
+    return equipped_tools
 }
 
 process QC {
@@ -79,12 +81,12 @@ process SMALT_MAPPING {
     tuple val(index), path(smi), path(sma)
 
   output:
-    path('*.bam')
+    path('*.sam')
 
   script:
-  options = build_tool_options(params.smalt)
+  options = build_tool_options(params.smlt)
    """
-   smalt map $index $read1 $read2 > ${id}.sam
+   smalt map $options $index $read1 $read2 > ${id}.sam
    """
 }
 
