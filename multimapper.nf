@@ -29,10 +29,25 @@ def validate_parameters() {
 
 def build_tool_options(tool_box) {
     // accepts parameter list of command line alterations for the tool used
+    if( tool_box instanceof String ) {          // if tool was adjusted from command line
+        if( tool_box ==~ '[&|;]' ) {            // check for code escaping arguments
+            println("WARNING: DANGEROUS INPUT! Please do not use command funnels in editable options!")
+            System.exit(0)
+        }
+        if( !tool_box.endsWith(']') || !tool_box.startsWith('[') ) { // check for list input format
+            println("""Please input command line option lists in format tool="['-option value', '--option_state']"""")
+            System.exit(0)
+        }
+        tool_intermediate = Eval.me(tool_box);
+        tool_box = tool_intermediate
+    }
+
     // initiate parameter list that are in use
     def tool_belt = []
+    println(tool_box)
 
     for( tool : tool_box ) {
+    println(tool)
         tool_setting = tool.split(' ');
         // tools are set up with '-flag input', split by gap and take second item
         tool_status = tool_setting[1]
@@ -44,6 +59,7 @@ def build_tool_options(tool_box) {
 }
     // return a string of all used flags in the form '-flag one -flag2 two'
     equipped_tools = tool_belt.join(' ')
+    println(equipped_tools)
     return equipped_tools
 }
 
@@ -111,8 +127,9 @@ process BWA_MAPPING {
     path('*.sam')
 
   script:
+      options = build_tool_options(params.bwa)
       """
-      bwa-mem2 mem ${index} $read1 $read2 > out.sam
+      bwa-mem2 mem $options ${index} $read1 $read2 > out.sam
       """
 }
 
@@ -137,8 +154,9 @@ process BOWTIE_MAPPING {
     path('*.sam')
 
   script:
+      options = build_tool_options(params.bowt)
       """
-      bowtie2 -x ${index} -1 $read1 -2 $read2
+      bowtie2 $options -x ${index} -1 $read1 -2 $read2 > ${id}.sam
       """
 }
 
@@ -198,7 +216,7 @@ process SH_SNP {
     endvcf = "var.vcf"
     """
     join_dna_files_with_indels.py -r ${ref} -o {aln} -t "+tmpname+"_mfas.txt
-    'summarise_snps.py -g -w -r '+options.ref.split("/")[-1].split(".")[0]+' -o '+options.output+' -i '+options.output+'.aln'
+    summarise_snps.py -g -w -r ref -o vcf -i .aln'
 
     """
 }
@@ -213,18 +231,24 @@ process FREEBAYES {
     script:
     bamname = bam.getBaseName()
     endvcf = "{bamname}.vcf"
+    options = build_tool_options(params.bays)
     """
-    freebayes -f ${ref} ${bam} > {bamname}.vcf
+    freebayes $options -f ${ref} ${bam} > ${bamname}.vcf
     """
 }
 
 process TREEBUILD {
     input:
-        path(bam)
-        path(ref)
+        path(vcf)
 
+    script:
+    id = vcf.getBaseName()
     """
-    RAxML-NG -f ${ref} ${bam} > tree.vcf
+    python3 /home/cn14/vcf2phylip/vcf2phylip.py --input ${vcf}
+    ls
+    raxml-ng --check
+    raxml-ng --parse
+    raxml-ng --msa ${id}.min1.phy --model LG+G8+F+ASC_STAM{(sitecounts)}
     """
 
 }
@@ -266,8 +290,8 @@ workflow MAPPING {
     }
     if (params.mapper == 'bowtie2') {
     BOWTIE_INDEXING(ref)
-    BOWTIE_MAPPING(fastqc, BWA_INDEXING.out)
-    sams = BWA_MAPPING.out
+    BOWTIE_MAPPING(fastqc, BOWTIE_INDEXING.out)
+    sams = BOWTIE_MAPPING.out
     }
 
     emit:
@@ -294,6 +318,6 @@ workflow {
 
     SNP_VARIANTS(MAPPING.out.sams, reference)
 
-//     TREEBUILD(VCF_SORT.out.collect(), reference)
+    TREEBUILD(SNP_VARIANTS.out.vcfs)
 //     COLLECT_SNP_DATA(VCF_SORT.out.collect())
 }
